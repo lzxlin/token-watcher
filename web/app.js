@@ -74,6 +74,7 @@ const isLight = () => document.documentElement.dataset.theme === 'light';
 const LIGHT_TOOL_COLORS = {
   'claude-code': '#b4533a', 'ccmr': '#6d5bd0', 'codex': '#0e8a55', 'zcode': '#8a6d15',
   'dsh': '#1c6fb8', 'workbuddy': '#c9386f', 'grok': '#333a44', 'pi': '#0c7f8f',
+  'codebuddy': '#3346b8',
   'opencode': '#bc5a10', 'kimi': '#25743f', 'qoder': '#7d5236', 'cursor': '#7d6412', 'antigravity': '#4f4a5c',
 };
 const toolColor = (t, fallback) => (isLight() && LIGHT_TOOL_COLORS[t]) || TOOL_COLORS[t] || fallback;

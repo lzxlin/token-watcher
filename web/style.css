@@ -212,6 +212,7 @@ th.num { color: var(--dim); }
 .badge.zcode { color: var(--zcode); background: rgba(242,193,78,.12); }
 .badge.dsh { color: var(--dsh); background: rgba(78,168,222,.12); }
 .badge.workbuddy { color: #f78fb3; background: rgba(247,143,179,.12); }
+.badge.codebuddy { color: #5c7cfa; background: rgba(92,124,250,.12); }
 .badge.grok { color: #e6edf3; background: rgba(230,237,243,.12); }
 .badge.pi { color: #2dd4bf; background: rgba(45,212,191,.12); }
 .badge.opencode { color: #ff8c42; background: rgba(255,140,66,.12); }
@@ -226,6 +227,7 @@ th.num { color: var(--dim); }
 [data-theme="light"] .badge.zcode { color: #8a6d15; background: rgba(138,109,21,.12); }
 [data-theme="light"] .badge.dsh { color: #1c6fb8; background: rgba(28,111,184,.12); }
 [data-theme="light"] .badge.workbuddy { color: #c9386f; background: rgba(201,56,111,.12); }
+[data-theme="light"] .badge.codebuddy { color: #3346b8; background: rgba(51,70,184,.12); }
 [data-theme="light"] .badge.grok { color: #333a44; background: rgba(51,58,68,.12); }
 [data-theme="light"] .badge.pi { color: #0c7f8f; background: rgba(12,127,143,.12); }
 [data-theme="light"] .badge.opencode { color: #bc5a10; background: rgba(188,90,16,.12); }

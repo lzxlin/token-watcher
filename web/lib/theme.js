@@ -8,6 +8,7 @@
 export const TOOL_COLORS = {
   'claude-code': '#e07a5f', 'ccmr': '#8b7cf6', 'codex': '#34c98e',
   'zcode': '#f2c14e', 'dsh': '#4ea8de', 'workbuddy': '#f78fb3', 'grok': '#e6edf3',
+  'codebuddy': '#5c7cfa',
   'pi': '#2dd4bf', 'opencode': '#ff8c42',
   'antigravity': '#6d6875', 'kimi': '#95d5b2', 'qoder': '#9c6644', 'cursor': '#f2cc8f',
 };
@@ -15,6 +16,7 @@ export const TOOL_COLORS = {
 export const TOOL_LABEL = {
   'claude-code': 'Claude Code', 'ccmr': 'ccmr', 'codex': 'Codex',
   'zcode': 'ZCode', 'dsh': 'dsh', 'workbuddy': 'WorkBuddy', 'grok': 'Grok',
+  'codebuddy': 'CodeBuddy',
   'pi': 'Pi', 'opencode': 'OpenCode',
   'antigravity': 'Antigravity', 'kimi': 'Kimi Code', 'qoder': 'Qoder', 'cursor': 'Cursor',
 };

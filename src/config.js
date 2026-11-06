@@ -116,6 +116,19 @@ export const SOURCES = [
     subscription: true,
   },
   {
+    // CodeBuddy（腾讯 AI IDE / CLI，WorkBuddy 的同一代码库前身）：
+    // 日志格式与 WorkBuddy 完全同构（message.usage + providerData.model/traceId），
+    // 复用 workbuddy 采集器；providerData.agent 可区分 'cli' 与 IDE。
+    // macOS 的大小写不敏感卷上 ~/.CodeBuddy 与 ~/.codebuddy 是同一目录，只登记小写形态。
+    tool: 'codebuddy',
+    label: 'CodeBuddy',
+    roots: [join(HOME, '.codebuddy/projects')],
+    kind: 'jsonl',
+    collector: 'workbuddy',
+    version: 1,
+    subscription: true,
+  },
+  {
     tool: 'pi',
     label: 'Pi',
     roots: [join(HOME, '.pi/agent/sessions')],

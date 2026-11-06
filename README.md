@@ -44,13 +44,13 @@ can see when the estimate drifts.
 | Interface | Local web dashboard + menu bar | Native apps + web | CLI reports | TUI / CLI |
 | Refresh | Real-time (FSEvents + SSE, <1s) | Hook-triggered sync | Manual run | Manual run |
 | Granularity | Per-request events | 30-min buckets | Daily | Daily |
-| Sources | 13, incl. China stack (ccmr, dsh, Qoder, Kimi Code, WorkBuddy) | 39 | Multi-agent | Multi-agent |
+| Sources | 14, incl. China stack (ccmr, dsh, Qoder, Kimi Code, WorkBuddy, CodeBuddy) | 39 | Multi-agent | Multi-agent |
 | Cost | LiteLLM prices + **balance reconciliation** + credits ledger | LiteLLM estimate | Estimate | Estimate |
 | Official quotas | Claude / Codex direct-read, Cursor billing CSV | 17 providers | Limited | Several |
 | Telemetry | Optional, opt-in aggregate leaderboard | Opt-out | None | None |
 | Install | One zero-dependency npm package (incl. universal menu-bar app) | npm + platform packages | npm | npm |
 
-## Supported tools (13 sources)
+## Supported tools (14 sources)
 
 | Tool | Data location | What you get |
 |---|---|---|
@@ -60,6 +60,7 @@ can see when the estimate drifts.
 | ZCode | `~/.zcode/cli/db/db.sqlite` | Per-request details, tool calls, **GLM Coding Plan credit windows** (5h / weekly, official API) |
 | dsh (DeepSeek Harness) | `~/.dsh/sessions` | Per-request details (multi-frame zstd snapshots) |
 | WorkBuddy | `~/.WorkBuddy/projects` | Per-request details + **self-learned credit rates** |
+| CodeBuddy (IDE + CLI) | `~/.codebuddy/projects` | Per-request details; CLI turns are marked `providerData.agent=cli` in the source logs |
 | Grok Build | `~/.grok/sessions` | Per-turn usage (incl. vendor cost scale), tool calls |
 | Pi | `~/.pi/agent/sessions` | Per-request details, tool calls |
 | OpenCode | `~/.local/share/opencode/opencode.db` | Per-request details, tool calls |
