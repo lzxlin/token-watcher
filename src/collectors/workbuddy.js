@@ -52,6 +52,9 @@ export async function collectWorkbuddyFile(store, { tool, path, fileId, offset }
       model: normalizeModel(pd.model),
       session_id: rec.sessionId || fileId,
       project,
+      // providerData.agent：'cli' = 命令行 agent，'compact' = 上下文压缩调用，
+      // 缺省 = IDE 面板。同一条日志流里混着两种客户端，靠它才能在面板上分开看。
+      client: pd.agent || null,
       input_tokens: inputRaw - cached,
       cached_input: cached,
       cache_write: 0,

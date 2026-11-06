@@ -125,7 +125,7 @@ export const SOURCES = [
     roots: [join(HOME, '.codebuddy/projects')],
     kind: 'jsonl',
     collector: 'workbuddy',
-    version: 1,
+    version: 2, // v2: 记录 client（providerData.agent），用于 CLI / IDE 细分
     subscription: true,
   },
   {

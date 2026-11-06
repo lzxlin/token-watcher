@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS events (
   model TEXT,
   session_id TEXT,
   project TEXT,
+  client TEXT,                            -- 同一产品的客户端细分：codebuddy 的 'cli' / IDE(null)
   input_tokens INTEGER NOT NULL DEFAULT 0,
   cached_input INTEGER NOT NULL DEFAULT 0,
   cache_write INTEGER NOT NULL DEFAULT 0,
@@ -99,6 +100,9 @@ function migrate(db, dbPath) {
   // Antigravity: 0=历史未知，1=字符估算，2=真实上下文+估算输出，3=逐轮真实 usage。
   // claude-code: 1=audit 回退，2=标准 transcript；旧 0 行来自原标准解析器。
   if (!cols.includes('usage_quality')) db.exec('ALTER TABLE events ADD COLUMN usage_quality INTEGER NOT NULL DEFAULT 0');
+  // CodeBuddy: 'cli' = 命令行 agent，NULL = IDE 面板。老库补列后存量行为 NULL，
+  // 由 collector 升级触发重扫回填（version 抬高）。
+  if (!cols.includes('client')) db.exec('ALTER TABLE events ADD COLUMN client TEXT');
   const idx = db.prepare("SELECT name FROM sqlite_master WHERE type='index' AND name='idx_events_session'").get();
   if (!idx) db.exec('CREATE INDEX idx_events_session ON events(session_id)'); // 会话钻取/模型回填高频查询
   // v2 模型归一：大小写变体合并（GLM-5.3-Flash → glm-5.3-flash）
@@ -133,9 +137,9 @@ export class Store {
     catch (err) { this.db.close(); throw err; }
     this._insertEvent = this.db.prepare(`
       INSERT OR IGNORE INTO events
-        (ts, tool, model, session_id, project,
+        (ts, tool, model, session_id, project, client,
          input_tokens, cached_input, cache_write, output_tokens, reasoning_tokens, total_tokens, dedup_key, trace_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
     // 去重命中时的补登：同一次 API 响应可能被拆成多行写入（Claude Code transcript 按
     // content block 分行），input/cached 每行重复，只有终结块带真实 output_tokens，
     // 先到的行是 0。ccmr 网关还不写 requestId，四个 block 会塌成同一个 dedup_key，
@@ -146,8 +150,9 @@ export class Store {
         input_tokens = ?, cached_input = ?, cache_write = ?,
         output_tokens = ?, reasoning_tokens = ?, total_tokens = ?
       WHERE dedup_key = ? AND output_tokens < ?`);
-    this._deleteLegacyDshEvent = this.db.prepare("DELETE FROM events WHERE tool = 'dsh' AND dedup_key = ?");
-    this._getClaudeEvent = this.db.prepare("SELECT * FROM events WHERE tool = 'claude-code' AND dedup_key = ?");
+    this._backfillClient = this.db.prepare(
+      'UPDATE events SET client = ? WHERE dedup_key = ? AND client IS NULL');
+    this._deleteLegacyDshEvent = this.db.prepare("DELETE FROM events WHERE tool = 'dsh' AND dedup_key = ?");    this._getClaudeEvent = this.db.prepare("SELECT * FROM events WHERE tool = 'claude-code' AND dedup_key = ?");
     this._getClaudeAliases = this.db.prepare(`SELECT * FROM events
       WHERE dedup_key >= ? AND dedup_key < ?`);
     this._deleteClaudeAlias = this.db.prepare("DELETE FROM events WHERE id = ? AND tool = 'claude-code'");
@@ -186,12 +191,15 @@ export class Store {
   insertEvent(e) {
     const dedupKey = e.tool === 'codex' ? canonicalCodexKey(e.dedup_key) : e.dedup_key;
     const r = this._insertEvent.run(
-      e.ts, e.tool, e.model ?? null, e.session_id ?? null, e.project ?? null,
+      e.ts, e.tool, e.model ?? null, e.session_id ?? null, e.project ?? null, e.client ?? null,
       e.input_tokens || 0, e.cached_input || 0, e.cache_write || 0,
       e.output_tokens || 0, e.reasoning_tokens || 0, e.total_tokens || 0, dedupKey,
       e.trace_id ?? null
     );
     if (r.changes) return 1;
+    // 老库补列后的存量行：重扫时只能靠这里回填 client（INSERT OR IGNORE 不会更新旧行），
+    // 否则 client 永远是 NULL，CLI/IDE 的细分对历史数据失效。
+    if (e.client) this._backfillClient.run(e.client, dedupKey);
     // 已存在同 key 的行：若这条携带更多输出，说明先到的是同一次响应的前置分片，补齐它
     this._supersedeEvent.run(
       e.input_tokens || 0, e.cached_input || 0, e.cache_write || 0,
@@ -240,7 +248,7 @@ export class Store {
     const chosen = { ...best, model: best.model ?? e.model ?? null,
       project: best.project ?? e.project ?? null, session_id: best.session_id ?? e.session_id ?? null };
     if (!current) this._insertEvent.run(
-      chosen.ts, e.tool, chosen.model, chosen.session_id, chosen.project,
+      chosen.ts, e.tool, chosen.model, chosen.session_id, chosen.project, chosen.client ?? null,
       chosen.input_tokens || 0, chosen.cached_input || 0, chosen.cache_write || 0,
       chosen.output_tokens || 0, chosen.reasoning_tokens || 0, chosen.total_tokens || 0,
       e.dedup_key, best.trace_id ?? null);
@@ -297,7 +305,7 @@ export class Store {
   upsertAntigravityEvent(e) {
     if (e.tool !== 'antigravity' || ![1, 2, 3].includes(e.usage_quality)) throw new Error('invalid Antigravity event');
     const n = this._insertEvent.run(
-      e.ts, e.tool, e.model ?? null, e.session_id ?? null, e.project ?? null,
+      e.ts, e.tool, e.model ?? null, e.session_id ?? null, e.project ?? null, e.client ?? null,
       e.input_tokens, e.cached_input, 0, e.output_tokens, e.reasoning_tokens,
       e.total_tokens, e.dedup_key, null,
     ).changes;

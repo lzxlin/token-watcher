@@ -183,10 +183,16 @@ export async function buildSummary(store, scannerStats, days, { balanceStatus = 
   const todaySessions = db.prepare(
     'SELECT COUNT(DISTINCT +session_id) n FROM events WHERE ts >= ?').get(todayStart);
 
+  // CodeBuddy 的 CLI 与 IDE 写的是同一个 tool（codebuddy），展示层按 client 拆成两条。
+  // 只有 client='cli' 才是命令行产生的用量；providerData.agent 里还有 general-purpose /
+  // Explore 这类子代理名，它们由 IDE 会话内部派生，必须留在 codebuddy 名下。
+  // 只影响面板聚合，库里的 tool 仍是 codebuddy —— doctor 的源健康、重扫清理都按源走。
+  const TOOL_EXPR = `CASE WHEN tool = 'codebuddy' AND client = 'cli'
+    THEN 'codebuddy-cli' ELSE tool END`;
   // 按天分组以本地日为键，今天 0 点正好是组边界：历史段与今天段不会落在同一组，直接拼接
   const dayToolRows = (since, until = Number.MAX_SAFE_INTEGER) => db.prepare(`
-    SELECT date(ts/1000, 'unixepoch', 'localtime') d, tool, SUM(total_tokens) total
-    FROM events WHERE ts >= ? AND ts < ? GROUP BY d, tool ORDER BY d`).all(since, until);
+    SELECT date(ts/1000, 'unixepoch', 'localtime') d, ${TOOL_EXPR} tool, SUM(total_tokens) total
+    FROM events WHERE ts >= ? AND ts < ? GROUP BY d, ${TOOL_EXPR} ORDER BY d`).all(since, until);
   const dayRows = [
     ...cachedHistory(db, `dayTool:${rangeStart}`, todayStart, (b) => dayToolRows(rangeStart, b)),
     ...dayToolRows(Math.max(rangeStart, todayStart)),
@@ -195,8 +201,8 @@ export async function buildSummary(store, scannerStats, days, { balanceStatus = 
     SELECT model, SUM(total_tokens) total, COUNT(*) n FROM events
     WHERE ts >= ? GROUP BY model ORDER BY total DESC LIMIT 10`).all(rangeStart);
   const toolRows = db.prepare(`
-    SELECT tool, SUM(total_tokens) total, COUNT(*) n FROM events
-    WHERE ts >= ? GROUP BY tool ORDER BY total DESC`).all(rangeStart);
+    SELECT ${TOOL_EXPR} tool, SUM(total_tokens) total, COUNT(*) n FROM events
+    WHERE ts >= ? GROUP BY ${TOOL_EXPR} ORDER BY total DESC`).all(rangeStart);
   const recent = db.prepare(`
     SELECT ts, tool, model, project, device, input_tokens, cached_input, output_tokens, total_tokens
     FROM events ORDER BY ts DESC, id DESC LIMIT 15`).all();
